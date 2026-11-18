@@ -314,22 +314,6 @@ details.tip summary{font-size:15px;letter-spacing:.5px}
     <span>PDF, EPUB ou TXT. Ele fica salvo aqui, com a capa.</span>
   </label>
   <div class="grid" id="grid"></div>
-  <div class="tips">
-    <div class="warn hidden" id="claudeWarn"><b>A Voz de IA está desligada aqui dentro do Claude.</b> O Claude bloqueia o download do modelo de voz. Abra o app pelo seu link próprio (veja "Usar fora do Claude", abaixo) para ter a voz humanizada.</div>
-    <details class="tip"><summary>✨ Voz de IA</summary><div>O app lê com a <b>Faber</b>, uma voz neural de IA em <b>português do Brasil</b>, gerada no seu próprio aparelho: grátis, sem limite e sem enviar o livro para a internet.<br><br>Na primeira vez que você der play, o app baixa a voz (cerca de 80 MB, uma vez só; use o Wi-Fi). Depois funciona até offline e continua tocando com a <b>tela bloqueada</b>.</div></details>
-    <details class="tip"><summary>Usar fora do Claude (grátis)</summary><div>
-      1. Crie uma conta grátis em <b>github.com</b>.<br>
-      2. Toque em <b>+</b> › <b>New repository</b>, dê o nome <b>audiolivros</b>, marque <b>Public</b> e crie.<br>
-      3. No repositório, toque em <b>Add file › Upload files</b> e envie o arquivo <b>index.html</b> do app.<br>
-      4. Vá em <b>Settings › Pages</b>, em "Branch" escolha <b>main</b> e salve.<br>
-      5. Em 1 ou 2 minutos o app fica no ar em <b>seu-usuario.github.io/audiolivros</b>. Abra no Safari e adicione à Tela de Início.
-    </div></details>
-    <details class="tip"><summary>Usar como app no celular</summary><div>
-      <b>iPhone:</b> abra este link no Safari, toque em Compartilhar (quadrado com seta) e depois em <b>Adicionar à Tela de Início</b>.<br>
-      <b>Android:</b> abra no Chrome, toque no menu ⋮ e depois em <b>Adicionar à tela inicial</b>.<br><br>
-      Os livros ficam salvos no próprio aparelho. Nada é enviado para servidores. Deixe a tela ligada enquanto ouve.
-    </div></details>
-  </div>
 </section>
 
 <!-- ===== CARREGANDO ===== -->
@@ -775,7 +759,7 @@ function prosody(c, i){
 /* ================= voz de IA (Supertonic, roda no aparelho) ================= */
 const AI_ORT = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
 const PIPER_WASM = 'https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/piper_phonemize';
-const AI_VOICE = 'https://huggingface.co/rhasspy/piper-voices/resolve/main/pt/pt_BR/faber/medium/pt_BR-faber-medium';
+const AI_VOICE = 'https://huggingface.co/rhasspy/piper-voices/resolve/main/pt/pt_BR/cadu/medium/pt_BR-cadu-medium';
 const AI_AHEAD = 5;
 const inClaude = /claude|anthropic/i.test(location.hostname);
 const AI = { state: inClaude ? 'blocked' : 'idle', pct:0, err:'', pipe:null, loading:null, emb:{}, cache:new Map(), pumping:false, waiting:-1, cur:null, curIdx:-1, ver:0 };
@@ -811,21 +795,21 @@ function aiStatus(){
   if(P.engine === 'ai'){
     if(AI.state === 'loading') t = `Baixando a voz de IA… ${Math.round(AI.pct*100)}% (só na primeira vez)`;
     else if(AI.state === 'ready' && S.playing && AI.waiting >= 0) t = 'Gerando a voz…';
-    else if(AI.state === 'error') t = 'A voz Faber não carregou. Toque em "Voz" para tentar de novo';
-    else if(AI.state === 'blocked') t = 'A voz Faber só funciona fora do Claude (pelo seu link do GitHub)';
+    else if(AI.state === 'error') t = 'A voz Cadu não carregou. Toque em "Voz" para tentar de novo';
+    else if(AI.state === 'blocked') t = 'A voz Cadu só funciona fora do Claude (pelo seu link do GitHub)';
   }
   el.textContent = t; el.classList.toggle('hidden', !t);
   const sh = $('#aiSheetStat'); if(sh) sh.textContent = aiStateText();
 }
 function aiStateText(){
-  return ({idle:'Ainda não baixada. Ela é baixada sozinha ao dar play (cerca de 80 MB, só uma vez; use o Wi-Fi).',
+  return ({idle:'Ainda não baixada. Ela é baixada sozinha ao dar play (cerca de 65 MB, só uma vez; use o Wi-Fi).',
            loading:`Baixando… ${Math.round(AI.pct*100)}%`, ready:'Pronta ✓ (funciona até sem internet)',
            error:'Não foi possível carregar: ' + (AI.err || 'erro desconhecido') + '.',
            blocked:'Dentro do app do Claude a voz de IA é bloqueada. Abra o app pelo seu link próprio (veja "Usar fora do Claude" na biblioteca).'})[AI.state] || '';
 }
 async function aiFetch(url, weight, done){
   let cache = null;
-  try{ cache = await caches.open('alv-voz-faber'); const hit = await cache.match(url); if(hit){ AI.pct = Math.min(1, done + weight); aiStatus(); return hit.arrayBuffer(); } }catch(e){}
+  try{ cache = await caches.open('alv-voz-cadu'); const hit = await cache.match(url); if(hit){ AI.pct = Math.min(1, done + weight); aiStatus(); return hit.arrayBuffer(); } }catch(e){}
   const r = await fetch(url);
   if(!r.ok) throw new Error(`download falhou (${r.status})`);
   const total = +r.headers.get('content-length') || 0;
@@ -872,8 +856,8 @@ async function aiLoad(){
   AI.loading = (async () => {
     try{
       AI.state = 'loading'; AI.pct = 0; aiStatus();
-      guard('carregar a voz'); aiLog('Iniciando (Piper Faber pt-BR)');
-      try{ caches.delete('alv-voz-v3'); }catch(e){}
+      guard('carregar a voz'); aiLog('Iniciando (Piper Cadu pt-BR)');
+      try{ caches.delete('alv-voz-v3'); caches.delete('alv-voz-faber'); }catch(e){}
       const ort = await import(AI_ORT + 'ort.wasm.min.mjs');
       ort.env.wasm.wasmPaths = AI_ORT; ort.env.wasm.numThreads = 1; ort.env.wasm.proxy = false;
       AI.ort = ort; aiLog('Motor ONNX carregado');
@@ -907,31 +891,54 @@ async function aiSpeak(text, speed, noise){
   const out = await AI.sess.run(feeds);
   return {pcm: out[AI.sess.outputNames[0]].data, sr: (AI.cfg.audio && AI.cfg.audio.sample_rate) || 22050};
 }
-async function aiSynth(i){
-  const c = S.chunks[i], pr = prosody(c, i);
-  const speed = Math.max(.85, Math.min(1.2, pr.rate / P.rate));
-  const noise = [.5, .6, .667, .78][P.expr];
-  const {pcm, sr} = await aiSpeak(c.s || c.t, speed, noise);
-  return {url: URL.createObjectURL(wavBlob(pcm, sr, pr.pre, pr.post)), dur: pcm.length/sr, pre: pr.pre/1000};
-}
 function aiReset(){
   AI.ver++; for(const r of AI.cache.values()) if(r.url) URL.revokeObjectURL(r.url);
-  AI.cache.clear(); AI.waiting = -1; AI.curIdx = -1; S.mood = {sad:0,tense:0,joy:0};
+  AI.cache.clear(); AI.waiting = -1; AI.curIdx = -1; AI.cur = null; S.mood = {sad:0,tense:0,joy:0};
+}
+const inGroup = () => AI.cur && AI.curIdx >= 0 && S.idx >= AI.curIdx && S.idx < AI.cur.end;
+/* blocos: frases do mesmo parágrafo juntas (até ~320 letras), para a fala fluir */
+function groupEnd(start){
+  const ch = S.chunks, n = ch.length; let i = start, chars = 0;
+  while(i < n){
+    const c = ch[i], len = (c.s || c.t).length;
+    if(i > start && (c.ps || c.h || ch[i-1].h || c.ch !== ch[start].ch)) break;
+    if(chars > 0 && chars + len > 320) break;
+    chars += len + 1; i++;
+  }
+  return Math.max(i, start + 1);
+}
+async function aiSynth(start){
+  const end = groupEnd(start), parts = [], lens = [];
+  let rateSum = 0, pre = 0, post = 0;
+  for(let i = start; i < end; i++){
+    const c = S.chunks[i], pr = prosody(c, i), sp = (c.s || c.t);
+    if(i === start) pre = pr.pre; if(i === end - 1) post = pr.post;
+    rateSum += pr.rate / P.rate * sp.length; parts.push(sp); lens.push(sp.length + 1);
+  }
+  const tot = lens.reduce((a,b) => a + b, 0);
+  const speed = Math.max(.88, Math.min(1.15, rateSum / Math.max(1, tot - lens.length)));
+  const noise = [.5, .6, .667, .78][P.expr];
+  const {pcm, sr} = await aiSpeak(parts.join(' '), speed, noise);
+  return {end, url: URL.createObjectURL(wavBlob(pcm, sr, pre, post)), dur: pcm.length/sr, pre: pre/1000, lens, tot};
 }
 function aiTrim(){
-  for(const [k,r] of AI.cache){ if(k < S.idx - 2 || k > S.idx + AI_AHEAD + 4){ if(r.url && k !== AI.curIdx) URL.revokeObjectURL(r.url); AI.cache.delete(k); } }
+  for(const [k,r] of AI.cache){ if((r.end || k+1) <= S.idx - 1 || k > S.idx + 400){ if(r.url && k !== AI.curIdx) URL.revokeObjectURL(r.url); AI.cache.delete(k); } }
 }
 async function aiPump(){
   if(AI.pumping || AI.state !== 'ready') return;
   AI.pumping = true;
   try{
     while(S.chunks.length && AI.state === 'ready' && useAI()){
-      let t = -1;
-      for(let k = S.idx; k < Math.min(S.chunks.length, S.idx + AI_AHEAD); k++){ if(!AI.cache.has(k)){ t = k; break; } }
+      let k = inGroup() ? AI.curIdx : S.idx, t = -1;
+      for(let count = 0; k < S.chunks.length && count < AI_AHEAD; count++){
+        const r = AI.cache.get(k);
+        if(!r){ t = k; break; }
+        k = r.end;
+      }
       if(t < 0) break;
       const ver = AI.ver, book = S.id;
       let r;
-      try{ r = await aiSynth(t); }catch(e){ console.error(e); r = {fail:true}; }
+      try{ r = await aiSynth(t); }catch(e){ console.error(e); aiLog('falha ao gerar: ' + (e.message || e)); r = {fail:true, end: groupEnd(t)}; }
       if(ver !== AI.ver || book !== S.id){ if(r.url) URL.revokeObjectURL(r.url); continue; }
       AI.cache.set(t, r); aiTrim();
       if(AI.waiting === t && S.playing) aiPlayIdx();
@@ -945,7 +952,7 @@ function aiPlayIdx(){
   const r = AI.cache.get(S.idx);
   if(!r){ AI.waiting = S.idx; aiStatus(); S.word = null; render(); aiPump(); return; }
   AI.waiting = -1;
-  if(r.fail){ S.idx++; save(); aiPlayIdx(); return; }
+  if(r.fail){ S.idx = r.end; save(); aiPlayIdx(); return; }
   AI.cur = r; AI.curIdx = S.idx; S.word = null;
   audio.src = r.url; audio.defaultPlaybackRate = P.rate; audio.playbackRate = P.rate;
   const p = audio.play();
@@ -954,23 +961,27 @@ function aiPlayIdx(){
 }
 audio.addEventListener('loadedmetadata', () => { audio.playbackRate = P.rate; });
 audio.addEventListener('ended', () => {
-  if(!S.playing || !useAI() || AI.curIdx !== S.idx) return;
-  const was = S.chunks[S.idx]; S.idx++;
+  if(!S.playing || !useAI() || !inGroup()) return;
+  const was = S.chunks[AI.curIdx]; S.idx = AI.cur.end;
   if(S.sleepChapter && S.chunks[S.idx] && S.chunks[S.idx].ch !== was.ch){ S.sleepChapter = false; pause(); toast('Timer: fim do capítulo'); return; }
   save(); aiPlayIdx();
 });
 setInterval(() => {
-  if(!S.playing || !useAI() || !AI.cur || AI.curIdx !== S.idx) return;
+  if(!S.playing || !useAI() || !inGroup()) return;
+  const g = AI.cur, frac = Math.max(0, Math.min(1, (audio.currentTime - g.pre) / g.dur));
+  let pos = frac * g.tot, j = 0;
+  while(j < g.lens.length - 1 && pos >= g.lens[j]){ pos -= g.lens[j]; j++; }
+  const idx = AI.curIdx + j;
+  if(idx !== S.idx){ S.idx = idx; S.word = null; render(); save(); }
   const c = S.chunks[S.idx]; if(!c) return;
-  const frac = Math.max(0, Math.min(1, (audio.currentTime - AI.cur.pre) / AI.cur.dur));
-  const sp = c.s || c.t, base = Math.max(0, c.t.indexOf(sp)), pos = base + Math.floor(frac * sp.length);
+  const sp = c.s || c.t, base = Math.max(0, c.t.indexOf(sp)), p2 = base + Math.floor(pos);
   const re = /[\p{L}\p{N}'’\-]+/gu; let m, w = null;
-  while((m = re.exec(c.t))){ if(m.index + m[0].length > pos){ w = [m.index, m.index + m[0].length]; break; } }
+  while((m = re.exec(c.t))){ if(m.index + m[0].length > p2){ w = [m.index, m.index + m[0].length]; break; } }
   if(w && (!S.word || S.word[0] !== w[0])){ S.word = w; paintCurrent(); }
 }, 120);
 async function aiSample(){
   if(!(await aiLoad())) return;
-  try{ const {pcm, sr} = await aiSpeak('Olá! Eu sou o Faber e vou narrar o seu livro.', 1); const a = new Audio(URL.createObjectURL(wavBlob(pcm, sr, 0, 0))); a.play().catch(()=>{}); }
+  try{ const {pcm, sr} = await aiSpeak('Olá! Eu sou o Cadu e vou narrar as suas obras favoritas.', 1); const a = new Audio(URL.createObjectURL(wavBlob(pcm, sr, 0, 0))); a.play().catch(()=>{}); }
   catch(e){ toast('Não consegui gerar a amostra'); }
 }
 function restartCurrent(){
@@ -981,7 +992,7 @@ function restartCurrent(){
 /* ================= reprodução ================= */
 const secAt = i => S.cum[Math.max(0, Math.min(i, S.chunks.length))] / (CPS * P.rate);
 const total = () => secAt(S.chunks.length);
-function inChunk(){ if(useAI()) return (AI.curIdx === S.idx && AI.cur) ? Math.min(Math.max(0, audio.currentTime - AI.cur.pre)/P.rate, secAt(S.idx+1) - secAt(S.idx)) : 0; return (S.playing && S.chunkStart) ? Math.min((performance.now() - S.chunkStart)/1000, secAt(S.idx+1) - secAt(S.idx)) : 0; }
+function inChunk(){ if(useAI()) return 0; return (S.playing && S.chunkStart) ? Math.min((performance.now() - S.chunkStart)/1000, secAt(S.idx+1) - secAt(S.idx)) : 0; }
 const curSec = () => secAt(S.idx) + inChunk();
 
 function speakCurrent(immediate){
@@ -1024,7 +1035,7 @@ function speakCurrent(immediate){
 function play(){
   if(!S.chunks.length) return;
   if(useAI()){
-    const resume = AI.curIdx === S.idx && AI.cur && audio.src === AI.cur.url && audio.currentTime > 0 && !audio.ended;
+    const resume = inGroup() && audio.src === AI.cur.url && audio.currentTime > 0 && !audio.ended;
     if(!resume) unlockAudio();
     S.playing = true; keepAwake(true); setMediaState(); render();
     if(resume){ audio.playbackRate = P.rate; const p = audio.play(); if(p) p.catch(()=>{}); return; }
@@ -1249,7 +1260,7 @@ function chipRow(body, items, isSel, onPick, off){
 }
 function showVoices(){
   openSheet('Voz', body => {
-    const r = rowBtn('Faber', 'pt-BR', true, () => { if(!S.playing) aiSample(); }, 'Voz de IA masculina em português do Brasil. Toque para ouvir uma amostra.', 'Brasil');
+    const r = rowBtn('Cadu', 'pt-BR', true, () => { if(!S.playing) aiSample(); }, 'Voz de IA masculina em português do Brasil. Toque para ouvir uma amostra.', 'Brasil');
     body.appendChild(r);
     const st = el('div', 'note'); st.id = 'aiSheetStat'; st.textContent = aiStateText(); body.appendChild(st);
     body.appendChild(el('div', 'note', 'A voz é gerada no seu próprio aparelho: grátis, sem limite e sem enviar o livro para a internet. O botão "Estilo" muda a expressividade e o ritmo da narração.'));
