@@ -316,11 +316,7 @@ details.tip summary{font-size:15px;letter-spacing:.5px}
   <div class="grid" id="grid"></div>
   <div class="tips">
     <div class="warn hidden" id="claudeWarn"><b>A Voz de IA está desligada aqui dentro do Claude.</b> O Claude bloqueia o download do modelo de voz. Abra o app pelo seu link próprio (veja "Usar fora do Claude", abaixo) para ter a voz humanizada.</div>
-    <details class="tip"><summary>✨ Voz de IA</summary><div>
-      O app usa por padrão uma <b>voz neural de IA</b> (Supertonic 3) gerada no seu próprio aparelho: grátis, sem limite e sem enviar o livro para lugar nenhum.<br><br>
-      Na primeira vez que você der play, o app baixa o modelo de voz (uma vez só; use o Wi-Fi). Depois funciona até offline. Em "Vozes" você escolhe entre 10 vozes, uma para o narrador e outra para os diálogos, e a qualidade.<br><br>
-      Com a Voz de IA o áudio continua <b>com a tela bloqueada</b>, já que o app vai gerando alguns trechos à frente.
-    </div></details>
+    <details class="tip"><summary>✨ Voz de IA</summary><div>O app lê com a <b>Faber</b>, uma voz neural de IA em <b>português do Brasil</b>, gerada no seu próprio aparelho: grátis, sem limite e sem enviar o livro para a internet.<br><br>Na primeira vez que você der play, o app baixa a voz (cerca de 80 MB, uma vez só; use o Wi-Fi). Depois funciona até offline e continua tocando com a <b>tela bloqueada</b>.</div></details>
     <details class="tip"><summary>Usar fora do Claude (grátis)</summary><div>
       1. Crie uma conta grátis em <b>github.com</b>.<br>
       2. Toque em <b>+</b> › <b>New repository</b>, dê o nome <b>audiolivros</b>, marque <b>Public</b> e crie.<br>
@@ -328,7 +324,6 @@ details.tip summary{font-size:15px;letter-spacing:.5px}
       4. Vá em <b>Settings › Pages</b>, em "Branch" escolha <b>main</b> e salve.<br>
       5. Em 1 ou 2 minutos o app fica no ar em <b>seu-usuario.github.io/audiolivros</b>. Abra no Safari e adicione à Tela de Início.
     </div></details>
-    <details class="tip" id="voiceTip"><summary>Voz do aparelho (alternativa)</summary><div id="voiceTipBody"></div></details>
     <details class="tip"><summary>Usar como app no celular</summary><div>
       <b>iPhone:</b> abra este link no Safari, toque em Compartilhar (quadrado com seta) e depois em <b>Adicionar à Tela de Início</b>.<br>
       <b>Android:</b> abra no Chrome, toque no menu ⋮ e depois em <b>Adicionar à tela inicial</b>.<br><br>
@@ -381,7 +376,7 @@ details.tip summary{font-size:15px;letter-spacing:.5px}
   <div class="toolbar">
     <button class="tool" id="speedBtn"><b id="speedLbl">1x</b>Velocidade</button>
     <button class="tool" id="chapBtn"><b><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></b>Capítulos</button>
-    <button class="tool" id="voiceBtn"><b><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg></b>Vozes</button>
+    <button class="tool" id="voiceBtn"><b><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg></b>Voz</button>
     <button class="tool" id="styleBtn"><b><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 12h3l3-8 4 16 3-8h7"/></svg></b><span id="styleLbl">Narração</span></button>
     <button class="tool" id="sleepBtn"><b id="sleepLbl"></b>Timer</button>
   </div>
@@ -419,6 +414,7 @@ const store = {
 const P = Object.assign({rate:1, narr:null, dlg:'', expr:2, view:'cover', fs:19, engine:'ai', aiVoice:'F1', aiDlg:'', aiSteps:5, aiLang:'pt'}, store.get('alv:prefs', {}));
 const saveP = () => store.set('alv:prefs', P);
 document.documentElement.style.setProperty('--fs', P.fs + 'px');
+P.engine = 'ai';
 
 const S = { id:null, meta:null, chunks:[], cum:[0], chapters:[], idx:0, playing:false, gen:0, tok:null,
             chunkStart:0, timer:0, watch:0, word:null, mood:{sad:0,tense:0,joy:0},
@@ -749,8 +745,8 @@ const RX = {
 function prosody(c, i){
   const L = EXPR[P.expr].k; let rate = 1, pitch = 1, pre = 0, post = 0;
   const s = c.s || c.t;
-  if(c.ps) pre = 240;
-  if(c.h){ pre = 650; post = 650; }
+  if(c.ps) pre = 110;
+  if(c.h){ pre = 380; post = 380; }
   if(L > 0){
     const low = s.toLowerCase();
     const decay = c.ps ? .45 : .6;
@@ -763,11 +759,11 @@ function prosody(c, i){
     const end = s.replace(/["'”’»)\]\s]+$/, '');
     if(/\?$/.test(end)) pitch += .06*L;
     else if(/!$/.test(end)){ rate += .05*L; pitch += .05*L; }
-    if(/(…|\.\.\.)$/.test(end)){ rate -= .05*L; post += 320*L; }
+    if(/(…|\.\.\.)$/.test(end)){ rate -= .05*L; post += 180*L; }
     if(/^\(.*\)$/.test(s)){ rate += .05*L; pitch -= .05*L; }
     if(s.length < 28 && !c.h) rate -= .03*L;
     const prev = S.chunks[i-1];
-    if(prev && !!prev.d !== !!c.d) pre = Math.max(pre, 160);
+    if(prev && !!prev.d !== !!c.d) pre = Math.max(pre, 60);
     const j = hashStr(s);
     pitch += (((j % 7) - 3) / 110) * L;
     rate  += ((((j >> 3) % 5) - 2) / 110) * L;
@@ -777,12 +773,10 @@ function prosody(c, i){
 }
 
 /* ================= voz de IA (Supertonic, roda no aparelho) ================= */
-const AI_BASE = 'https://huggingface.co/safwan-o/supertonic-3-int8/resolve/main';
 const AI_ORT = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
-const AI_VOICES = [['F1','Feminina 1'],['F2','Feminina 2'],['F3','Feminina 3'],['F4','Feminina 4'],['F5','Feminina 5'],
-                   ['M1','Masculina 1'],['M2','Masculina 2'],['M3','Masculina 3'],['M4','Masculina 4'],['M5','Masculina 5']];
-const AI_LANGS = [['pt','Português'],['en','English'],['es','Español'],['fr','Français']];
-const AI_AHEAD = (isIOS || isAndroid) ? 3 : 6;
+const PIPER_WASM = 'https://cdn.jsdelivr.net/npm/@diffusionstudio/piper-wasm@1.0.0/build/piper_phonemize';
+const AI_VOICE = 'https://huggingface.co/rhasspy/piper-voices/resolve/main/pt/pt_BR/faber/medium/pt_BR-faber-medium';
+const AI_AHEAD = 5;
 const inClaude = /claude|anthropic/i.test(location.hostname);
 const AI = { state: inClaude ? 'blocked' : 'idle', pct:0, err:'', pipe:null, loading:null, emb:{}, cache:new Map(), pumping:false, waiting:-1, cur:null, curIdx:-1, ver:0 };
 const useAI = () => P.engine === 'ai' && AI.state !== 'blocked' && AI.state !== 'error';
@@ -817,24 +811,23 @@ function aiStatus(){
   if(P.engine === 'ai'){
     if(AI.state === 'loading') t = `Baixando a voz de IA… ${Math.round(AI.pct*100)}% (só na primeira vez)`;
     else if(AI.state === 'ready' && S.playing && AI.waiting >= 0) t = 'Gerando a voz…';
-    else if(AI.state === 'error') t = 'Voz de IA indisponível, usando a voz do aparelho';
-    else if(AI.state === 'blocked') t = 'Voz de IA bloqueada dentro do Claude: tocando a voz do aparelho';
+    else if(AI.state === 'error') t = 'A voz Faber não carregou. Toque em "Voz" para tentar de novo';
+    else if(AI.state === 'blocked') t = 'A voz Faber só funciona fora do Claude (pelo seu link do GitHub)';
   }
   el.textContent = t; el.classList.toggle('hidden', !t);
   const sh = $('#aiSheetStat'); if(sh) sh.textContent = aiStateText();
 }
 function aiStateText(){
-  return ({idle:'Ainda não baixada. Ela é baixada automaticamente ao dar play (cerca de 110 MB, só uma vez, de preferência no Wi-Fi).',
+  return ({idle:'Ainda não baixada. Ela é baixada sozinha ao dar play (cerca de 80 MB, só uma vez; use o Wi-Fi).',
            loading:`Baixando… ${Math.round(AI.pct*100)}%`, ready:'Pronta ✓ (funciona até sem internet)',
-           error:'Não foi possível carregar: ' + (AI.err || 'erro desconhecido') + '. Toque em uma voz para tentar de novo.',
+           error:'Não foi possível carregar: ' + (AI.err || 'erro desconhecido') + '.',
            blocked:'Dentro do app do Claude a voz de IA é bloqueada. Abra o app pelo seu link próprio (veja "Usar fora do Claude" na biblioteca).'})[AI.state] || '';
 }
-async function aiFetch(path, weight, done){
-  const url = `${AI_BASE}/${path}`;
+async function aiFetch(url, weight, done){
   let cache = null;
-  try{ cache = await caches.open('alv-voz-v3'); const hit = await cache.match(url); if(hit){ AI.pct = Math.min(1, done + weight); aiStatus(); return hit.arrayBuffer(); } }catch(e){}
+  try{ cache = await caches.open('alv-voz-faber'); const hit = await cache.match(url); if(hit){ AI.pct = Math.min(1, done + weight); aiStatus(); return hit.arrayBuffer(); } }catch(e){}
   const r = await fetch(url);
-  if(!r.ok) throw new Error(`download falhou (${r.status}) em ${path}`);
+  if(!r.ok) throw new Error(`download falhou (${r.status})`);
   const total = +r.headers.get('content-length') || 0;
   let buf;
   if(r.body && total){
@@ -846,6 +839,32 @@ async function aiFetch(path, weight, done){
   AI.pct = done + weight; aiStatus();
   return buf;
 }
+function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('falha ao carregar o fonemizador')); document.head.appendChild(s); }); }
+let phonRes = null;
+async function phonModule(){
+  if(AI.phon) return AI.phon;
+  if(!window.createPiperPhonemize) await loadScript(PIPER_WASM + '.js');
+  AI.phon = await window.createPiperPhonemize({
+    print: d => { if(phonRes){ const r = phonRes; phonRes = null; try{ r.ok(JSON.parse(d).phoneme_ids); }catch(e){ r.err(e); } } },
+    printErr: m => aiLog('espeak: ' + m),
+    locateFile: u => u.endsWith('.wasm') ? PIPER_WASM + '.wasm' : u.endsWith('.data') ? PIPER_WASM + '.data' : u
+  });
+  return AI.phon;
+}
+async function phonemize(text){
+  for(let attempt = 0; attempt < 2; attempt++){
+    const m = await phonModule();
+    try{
+      return await new Promise((ok, err) => {
+        phonRes = {ok, err};
+        try{ m.callMain(['-l', (AI.cfg.espeak && AI.cfg.espeak.voice) || 'pt-br', '--input', JSON.stringify([{text}]), '--espeak_data', '/espeak-ng-data']); }
+        catch(e){ if(!(e && e.name === 'ExitStatus') && phonRes){ phonRes = null; err(e); } }
+        setTimeout(() => { if(phonRes){ phonRes = null; err(new Error('fonemizador sem resposta')); } }, 5000);
+      });
+    }catch(e){ aiLog('fonemizador reiniciado: ' + (e.message || e)); AI.phon = null; }
+  }
+  throw new Error('fonemizador falhou');
+}
 async function aiLoad(){
   if(AI.state === 'ready') return true;
   if(AI.state === 'blocked') return false;
@@ -853,23 +872,20 @@ async function aiLoad(){
   AI.loading = (async () => {
     try{
       AI.state = 'loading'; AI.pct = 0; aiStatus();
-      guard('carregar a voz'); aiLog('Iniciando (Supertonic 3 int8)');
+      guard('carregar a voz'); aiLog('Iniciando (Piper Faber pt-BR)');
+      try{ caches.delete('alv-voz-v3'); }catch(e){}
       const ort = await import(AI_ORT + 'ort.wasm.min.mjs');
       ort.env.wasm.wasmPaths = AI_ORT; ort.env.wasm.numThreads = 1; ort.env.wasm.proxy = false;
       AI.ort = ort; aiLog('Motor ONNX carregado');
-      AI.cfg = JSON.parse(new TextDecoder().decode(await aiFetch('onnx/tts.json', .002, 0)));
-      AI.idx = JSON.parse(new TextDecoder().decode(await aiFetch('onnx/unicode_indexer.json', .003, .002)));
-      const parts = [['dp','onnx/duration_predictor.onnx',.03],['te','onnx/text_encoder.onnx',.15],['ve','onnx/vector_estimator.onnx',.58],['vo','onnx/vocoder.onnx',.235]];
-      let done = .005; AI.s = {};
-      for(const [k, path, w] of parts){
-        const buf = await aiFetch(path, w, done); done += w;
-        guard('abrir ' + path.split('/')[1]);
-        AI.s[k] = await ort.InferenceSession.create(new Uint8Array(buf), {executionProviders:['wasm'], graphOptimizationLevel:'all'});
-        aiLog(`${k}: in=[${AI.s[k].inputNames}] out=[${AI.s[k].outputNames}]`);
-      }
-      await aiEmb(P.aiVoice);
+      AI.cfg = JSON.parse(new TextDecoder().decode(await aiFetch(AI_VOICE + '.onnx.json', .01, 0)));
+      const buf = await aiFetch(AI_VOICE + '.onnx', .79, .01);
+      guard('abrir o modelo de voz');
+      AI.sess = await ort.InferenceSession.create(new Uint8Array(buf), {executionProviders:['wasm'], graphOptimizationLevel:'all'});
+      aiLog(`modelo: in=[${AI.sess.inputNames}] out=[${AI.sess.outputNames}]`);
+      guard('carregar o fonemizador');
+      await phonModule(); AI.pct = 1; aiStatus(); aiLog('Fonemizador carregado');
       guard('gerar a primeira frase');
-      await aiSpeak('Olá.', P.aiVoice, 1.05);
+      await aiSpeak('Olá.', 1);
       unguard(); aiLog('Teste de voz OK');
       AI.state = 'ready'; aiStatus(); return true;
     }catch(e){
@@ -878,80 +894,25 @@ async function aiLoad(){
   })();
   return AI.loading;
 }
-const flat = a => Array.isArray(a) ? a.flat(Infinity) : a;
-async function aiEmb(v){
-  if(!AI.emb[v]){
-    const j = JSON.parse(new TextDecoder().decode(await aiFetch(`voice_styles/${v}.json`, 0, AI.pct)));
-    const T = AI.ort.Tensor;
-    AI.emb[v] = { ttl: new T('float32', Float32Array.from(flat(j.style_ttl.data)), j.style_ttl.dims),
-                  dp:  new T('float32', Float32Array.from(flat(j.style_dp.data)),  j.style_dp.dims) };
-  }
-  return AI.emb[v];
-}
-function aiPrep(text){
-  let t = text.normalize('NFKD')
-    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
-    .replace(/[–‑—―]/g, ', ').replace(/[“”«»„]/g, '"').replace(/[‘’´`]/g, "'")
-    .replace(/[\[\]|\/#→←_*]/g, ' ').replace(/[♥☆♡©\\]/g, '')
-    .replace(/\s+([,.!?;:])/g, '$1').replace(/^[,\s]+/, '').replace(/\s+/g, ' ').trim();
-  if(!/[.!?;:,'")…]$/.test(t)) t += '.';
-  return `<${P.aiLang}>${t}</${P.aiLang}>`;
-}
-function aiIds(s){
-  const ids = [];
-  for(const ch of s){ const cp = ch.codePointAt(0); const v = Array.isArray(AI.idx) ? AI.idx[cp] : AI.idx[cp] ?? AI.idx[String(cp)]; if(v != null && v >= 0) ids.push(v); }
-  return ids;
-}
-function randn(){ let u = 0, v = 0; while(!u) u = Math.random(); while(!v) v = Math.random(); return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v); }
-function aiFeed(sess, vals){
-  const f = {};
-  for(const n of sess.inputNames){
-    const l = n.toLowerCase(); let v;
-    if(/latent_mask/.test(l)) v = vals.latent_mask;
-    else if(/text_mask|attention_mask/.test(l)) v = vals.text_mask;
-    else if(/text_ids|input_ids/.test(l)) v = vals.text_ids;
-    else if(/style_dp/.test(l)) v = vals.style_dp;
-    else if(/style/.test(l)) v = vals.style_ttl;
-    else if(/text_emb|encoder/.test(l)) v = vals.text_emb;
-    else if(/current|timestep/.test(l)) v = vals.current_step;
-    else if(/total|num_inference/.test(l)) v = vals.total_step;
-    else if(/latent|noisy/.test(l)) v = vals.latent;
-    if(!v) throw new Error('entrada desconhecida do modelo: ' + n);
-    f[n] = v;
-  }
-  return f;
-}
-async function aiSpeak(text, voice, speed){
-  const T = AI.ort.Tensor, st = await aiEmb(voice), cfg = AI.cfg;
-  const ids = aiIds(aiPrep(text)); const L = ids.length;
-  const text_ids = new T('int64', BigInt64Array.from(ids.map(BigInt)), [1, L]);
-  const text_mask = new T('float32', new Float32Array(L).fill(1), [1, 1, L]);
-  const base = {text_ids, text_mask, style_dp: st.dp, style_ttl: st.ttl};
-  const dOut = await AI.s.dp.run(aiFeed(AI.s.dp, base));
-  const dur = dOut[AI.s.dp.outputNames[0]].data[0] / speed;
-  const eOut = await AI.s.te.run(aiFeed(AI.s.te, base));
-  const text_emb = eOut[AI.s.te.outputNames[0]];
-  const sr = cfg.ae.sample_rate, chunk = cfg.ae.base_chunk_size * cfg.ttl.chunk_compress_factor;
-  const wavLen = Math.max(1, Math.floor(dur * sr)), latLen = Math.ceil(wavLen / chunk), latDim = cfg.ttl.latent_dim * cfg.ttl.chunk_compress_factor;
-  let x = new Float32Array(latDim * latLen); for(let i=0;i<x.length;i++) x[i] = randn();
-  const latent_mask = new T('float32', new Float32Array(latLen).fill(1), [1, 1, latLen]);
-  const total_step = new T('float32', new Float32Array([P.aiSteps]), [1]);
-  for(let step=0; step<P.aiSteps; step++){
-    const o = await AI.s.ve.run(aiFeed(AI.s.ve, {...base, text_emb, latent_mask, total_step, current_step: new T('float32', new Float32Array([step]), [1]), latent: new T('float32', x, [1, latDim, latLen])}));
-    x = o[AI.s.ve.outputNames[0]].data;
-    await tick();
-  }
-  const w = await AI.s.vo.run(aiFeed(AI.s.vo, {latent: new T('float32', x, [1, latDim, latLen])}));
-  const wav = w[AI.s.vo.outputNames[0]].data;
-  return {pcm: wav.slice(0, Math.min(wav.length, wavLen)), sr};
+async function aiSpeak(text, speed, noise){
+  const clean = text.replace(/^[—–―-]\s*/, '').replace(/[“”«»]/g, '"').replace(/\s+/g, ' ').trim();
+  const ids = await phonemize(clean || '.');
+  const T = AI.ort.Tensor, inf = AI.cfg.inference || {};
+  const feeds = {
+    input: new T('int64', BigInt64Array.from(ids.map(BigInt)), [1, ids.length]),
+    input_lengths: new T('int64', BigInt64Array.from([BigInt(ids.length)]), [1]),
+    scales: new T('float32', Float32Array.from([noise ?? inf.noise_scale ?? .667, (inf.length_scale ?? 1) / speed, inf.noise_w ?? .8]), [3])
+  };
+  if((AI.cfg.num_speakers || 1) > 1 && AI.sess.inputNames.includes('sid')) feeds.sid = new T('int64', BigInt64Array.from([0n]), [1]);
+  const out = await AI.sess.run(feeds);
+  return {pcm: out[AI.sess.outputNames[0]].data, sr: (AI.cfg.audio && AI.cfg.audio.sample_rate) || 22050};
 }
 async function aiSynth(i){
   const c = S.chunks[i], pr = prosody(c, i);
-  const speed = Math.max(.85, Math.min(1.25, 1.05 * (pr.rate / P.rate)));
-  const voice = (c.d && P.aiDlg) || P.aiVoice;
-  const {pcm, sr} = await aiSpeak(c.s || c.t, voice, speed);
-  const post = 90 + pr.post;
-  return {url: URL.createObjectURL(wavBlob(pcm, sr, pr.pre, post)), dur: pcm.length/sr, pre: pr.pre/1000};
+  const speed = Math.max(.85, Math.min(1.2, pr.rate / P.rate));
+  const noise = [.5, .6, .667, .78][P.expr];
+  const {pcm, sr} = await aiSpeak(c.s || c.t, speed, noise);
+  return {url: URL.createObjectURL(wavBlob(pcm, sr, pr.pre, pr.post)), dur: pcm.length/sr, pre: pr.pre/1000};
 }
 function aiReset(){
   AI.ver++; for(const r of AI.cache.values()) if(r.url) URL.revokeObjectURL(r.url);
@@ -1007,12 +968,10 @@ setInterval(() => {
   while((m = re.exec(c.t))){ if(m.index + m[0].length > pos){ w = [m.index, m.index + m[0].length]; break; } }
   if(w && (!S.word || S.word[0] !== w[0])){ S.word = w; paintCurrent(); }
 }, 120);
-async function aiSample(voice){
+async function aiSample(){
   if(!(await aiLoad())) return;
-  try{
-    const {pcm, sr} = await aiSpeak(P.aiLang === 'pt' ? 'Olá! Esta é a minha voz. Posso narrar o seu livro?' : 'Hello! This is my voice. Shall I read your book?', voice, 1.05);
-    const a = new Audio(URL.createObjectURL(wavBlob(pcm, sr, 0, 0))); a.play().catch(()=>{});
-  }catch(e){ toast('Não consegui gerar a amostra'); }
+  try{ const {pcm, sr} = await aiSpeak('Olá! Eu sou o Faber e vou narrar o seu livro.', 1); const a = new Audio(URL.createObjectURL(wavBlob(pcm, sr, 0, 0))); a.play().catch(()=>{}); }
+  catch(e){ toast('Não consegui gerar a amostra'); }
 }
 function restartCurrent(){
   if(!S.playing){ render(); return; }
@@ -1288,67 +1247,16 @@ function chipRow(body, items, isSel, onPick, off){
   items.forEach(([v, label]) => { const b = el('button', 'chip' + (isSel(v) ? ' sel' : '') + (off ? ' dis' : ''), label); b.onclick = () => off ? toast(off) : onPick(v); wrap.appendChild(b); });
   body.appendChild(wrap);
 }
-function showAIVoices(){
-  openSheet('Vozes', body => {
-    engineSeg(body, 'ai');
-    if(AI.state === 'blocked'){ const w = el('div', 'warn'); w.textContent = aiStateText(); body.appendChild(w); }
+function showVoices(){
+  openSheet('Voz', body => {
+    const r = rowBtn('Faber', 'pt-BR', true, () => { if(!S.playing) aiSample(); }, 'Voz de IA masculina em português do Brasil. Toque para ouvir uma amostra.', 'Brasil');
+    body.appendChild(r);
     const st = el('div', 'note'); st.id = 'aiSheetStat'; st.textContent = aiStateText(); body.appendChild(st);
-    body.appendChild(el('div', 'note', 'Voz neural gerada no seu próprio aparelho, de graça e sem limite. Nada do livro é enviado para a internet.'));
-    const reset = () => { saveP(); aiReset(); if(S.playing) restartCurrent(); };
-    const off = AI.state === 'blocked' ? 'Indisponível dentro do Claude. Abra pelo seu link do GitHub.' : null;
-    body.appendChild(el('div', 'sub', 'Narrador'));
-    chipRow(body, AI_VOICES, v => P.aiVoice === v, v => { P.aiVoice = v; reset(); if(!S.playing) aiSample(v); showAIVoices(); }, off);
-    body.appendChild(el('div', 'sub', 'Diálogos dos personagens'));
-    chipRow(body, [['', 'Mesma do narrador'], ...AI_VOICES], v => P.aiDlg === v, v => { P.aiDlg = v; reset(); if(!S.playing && v) aiSample(v); showAIVoices(); }, off);
-    body.appendChild(el('div', 'sub', 'Qualidade'));
-    chipRow(body, [[3,'Rápida'],[5,'Equilibrada'],[10,'Máxima']], v => P.aiSteps === v, v => { P.aiSteps = v; reset(); showAIVoices(); }, off);
-    body.appendChild(el('div', 'note', 'Mais qualidade demora mais para gerar. Se a leitura der pausas para "gerar a voz", use Rápida.'));
-    body.appendChild(el('div', 'sub', 'Idioma do livro'));
-    chipRow(body, AI_LANGS, v => P.aiLang === v, v => { P.aiLang = v; reset(); showAIVoices(); }, off);
-    body.appendChild(el('div', 'note', 'O botão "Estilo" também vale aqui: o ritmo e as pausas mudam conforme a emoção do texto.'));
+    body.appendChild(el('div', 'note', 'A voz é gerada no seu próprio aparelho: grátis, sem limite e sem enviar o livro para a internet. O botão "Estilo" muda a expressividade e o ritmo da narração.'));
+    if(AI.state === 'error'){ const b = el('button', 'chip', 'Tentar carregar de novo'); b.onclick = () => { AI.state = 'idle'; AI.err = ''; showVoices(); aiLoad(); }; const w = el('div', 'chips'); w.appendChild(b); body.appendChild(w); }
     const log = store.get('alv:aiLog', []);
     if(log.length){ const d = document.createElement('details'); d.appendChild(el('summary', 'sub', 'Diagnóstico (mande print para o Claude)'));
       const pre = el('div', 'note', navigator.userAgent + '\n' + log.join('\n')); pre.style.whiteSpace = 'pre-wrap'; pre.style.fontSize = '11px'; d.appendChild(pre); body.appendChild(d); }
-    if(AI.state === 'error'){ const b = el('button', 'chip', 'Tentar carregar de novo'); b.onclick = () => { AI.state = 'idle'; AI.err = ''; showAIVoices(); aiLoad(); }; const w = el('div', 'chips'); w.appendChild(b); body.appendChild(w); }
-  });
-}
-function showVoices(tab){
-  loadVoices();
-  tab = tab || (P.engine === 'ai' ? 'ai' : 'narr');
-  if(tab === 'ai') return showAIVoices();
-  const wasPlaying = S.playing;
-  openSheet('Vozes', body => {
-    engineSeg(body, P.engine === 'ai' ? 'ai' : 'device');
-    const seg = el('div', 'seg');
-    const b1 = el('button', tab === 'narr' ? 'sel' : '', 'Narrador'), b2 = el('button', tab === 'dlg' ? 'sel' : '', 'Diálogos');
-    b1.onclick = () => showVoices('narr'); b2.onclick = () => showVoices('dlg');
-    seg.append(b1, b2); body.appendChild(seg);
-    if(!voices.length){ body.appendChild(el('div', 'note', 'Nenhuma voz encontrada ainda. Aguarde alguns segundos e abra de novo.')); return; }
-    const pt = voices.filter(isPt);
-    if(isIOS || !pt.some(hq)){ const w = el('div', 'warn'); w.innerHTML = (isIOS ? '<b>Para usar a voz Aprimorada:</b><br>' : '<b>Quer uma voz bem mais humana?</b><br>') + voiceTipHTML(); body.appendChild(w); }
-    const cur = tab === 'narr' ? narratorVoice() : dialogVoice();
-    const pick = v => {
-      if(tab === 'narr') P.narr = v ? v.voiceURI : null; else P.dlg = v ? v.voiceURI : '';
-      saveP();
-      if(wasPlaying && S.playing) speakCurrent(true); else sampleVoice(v || narratorVoice(), tab === 'dlg');
-      showVoices(tab);
-    };
-    if(tab === 'narr'){
-      body.appendChild(rowBtn('Voz do sistema', '', useSys(), () => { P.narr = SYS; saveP(); if(wasPlaying && S.playing) speakCurrent(true); else sampleVoice(null, false); showVoices(tab); }, isIOS ? 'Usa a voz que está marcada em Ajustes › Acessibilidade › Conteúdo Falado › Vozes › Português. É o jeito de usar a voz Aprimorada/Premium no iPhone.' : 'Usa a voz padrão do aparelho.', isIOS ? 'Recomendado' : null));
-    }
-    if(tab === 'dlg'){
-      body.appendChild(el('div', 'note', 'Falas dos personagens (com travessão ou entre aspas) podem ter outra voz, como num audiolivro com elenco.'));
-      body.appendChild(rowBtn('Mesma do narrador', '', !P.dlg, () => pick(null), 'Usa a voz do narrador com um tom um pouco diferente.'));
-    }
-    const sorted = voices.slice().sort((a,b) => (isPt(b) - isPt(a)) || (HQ.test(b.name) - HQ.test(a.name)) || (isBR(b) - isBR(a)) || a.name.localeCompare(b.name));
-    const ptList = sorted.filter(isPt), other = sorted.filter(v => !isPt(v));
-    if(ptList.length) body.appendChild(el('div', 'sub', 'Português'));
-    ptList.forEach(v => body.appendChild(rowBtn(vLabel(v), v.lang, cur && v.voiceURI === cur.voiceURI && (tab === 'narr' || P.dlg), () => pick(v), null, hq(v) ? 'Alta qualidade' : null)));
-    if(other.length){
-      const det = document.createElement('details'); const sm = el('summary', 'sub', `Outros idiomas (${other.length})`); sm.style.cursor = 'pointer'; det.appendChild(sm);
-      other.forEach(v => det.appendChild(rowBtn(vLabel(v), v.lang, cur && v.voiceURI === cur.voiceURI && (tab === 'narr' || P.dlg), () => pick(v), null, hq(v) ? 'Alta qualidade' : null)));
-      body.appendChild(det);
-    }
   });
 }
 function showStyle(){
@@ -1480,7 +1388,6 @@ document.addEventListener('keydown', e => {
 });
 window.addEventListener('pagehide', () => save(true));
 
-$('#voiceTipBody').innerHTML = voiceTipHTML();
 if(inClaude) $('#claudeWarn').classList.remove('hidden');
 if(aiCrashed) showErr('A voz de IA travou o aparelho na última vez, então voltei para a voz do aparelho. Em "Vozes" › Diagnóstico tem os detalhes para mandar ao Claude.');
 if(!synth) showErr('Este navegador não tem leitura em voz alta. Use Safari, Chrome ou Edge.');
