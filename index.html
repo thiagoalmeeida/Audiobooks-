@@ -645,10 +645,17 @@ const AI_LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
 const AI_VOICES = [['F1','Feminina 1'],['F2','Feminina 2'],['F3','Feminina 3'],['F4','Feminina 4'],['F5','Feminina 5'],
                    ['M1','Masculina 1'],['M2','Masculina 2'],['M3','Masculina 3'],['M4','Masculina 4'],['M5','Masculina 5']];
 const AI_LANGS = [['pt','Português'],['en','English'],['es','Español'],['fr','Français']];
-const AI_AHEAD = 6;
+const AI_AHEAD = (isIOS || isAndroid) ? 3 : 6;
 const inClaude = /claude|anthropic/i.test(location.hostname);
 const AI = { state: inClaude ? 'blocked' : 'idle', pct:0, err:'', pipe:null, loading:null, emb:{}, cache:new Map(), pumping:false, waiting:-1, cur:null, curIdx:-1, ver:0 };
 const useAI = () => P.engine === 'ai' && AI.state !== 'blocked' && AI.state !== 'error';
+function aiLog(m){ try{ const l = store.get('alv:aiLog', []); l.push(new Date().toLocaleTimeString() + ' ' + m); store.set('alv:aiLog', l.slice(-12)); }catch(e){} }
+let aiCrashed = false;
+(() => { const f = store.get('alv:aiGuard', null);
+  if(f){ aiCrashed = true; aiLog('Recuperado após travamento durante: ' + f);
+    AI.state = 'error'; AI.err = 'o aparelho fechou a página durante "' + f + '" (provável falta de memória)'; store.set('alv:aiGuard', null); } })();
+const guard = stage => store.set('alv:aiGuard', stage);
+const unguard = () => store.set('alv:aiGuard', null);
 const audio = new Audio(); audio.preload = 'auto';
 try{ audio.preservesPitch = true; audio.webkitPreservesPitch = true; }catch(e){}
 
@@ -692,18 +699,29 @@ async function aiLoad(){
   AI.loading = (async () => {
     try{
       AI.state = 'loading'; AI.pct = 0; aiStatus();
+      guard('carregar a voz'); aiLog('Iniciando carregamento');
       const T = await import(AI_LIB);
       T.env.allowLocalModels = false;
+      try{ T.env.backends.onnx.wasm.numThreads = 1; T.env.backends.onnx.wasm.proxy = false; }catch(e){}
+      aiLog('Biblioteca carregada');
       const files = {};
       const progress_callback = d => {
         if(d && d.status === 'progress' && d.total){ files[d.file] = [d.loaded, d.total]; let a = 0, b = 0; for(const k in files){ a += files[k][0]; b += files[k][1]; } AI.pct = b ? a/b : 0; aiStatus(); }
       };
-      try{ AI.pipe = await T.pipeline('text-to-speech', AI_MODEL, {device:'wasm', progress_callback}); }
-      catch(e1){ console.warn('modelo padrão falhou, tentando fp32', e1); AI.pipe = await T.pipeline('text-to-speech', AI_MODEL, {device:'wasm', dtype:'fp32', progress_callback}); }
+      try{ AI.pipe = await T.pipeline('text-to-speech', AI_MODEL, {device:'wasm', dtype:'q8', progress_callback}); }
+      catch(e1){
+        aiLog('q8 falhou: ' + (e1 && e1.message || e1));
+        if(isIOS || isAndroid) throw e1;
+        AI.pipe = await T.pipeline('text-to-speech', AI_MODEL, {device:'wasm', dtype:'fp32', progress_callback});
+      }
+      aiLog('Modelo carregado');
       await aiEmb(P.aiVoice);
+      guard('gerar a primeira frase');
+      await aiSpeak('Olá.', P.aiVoice, 1.05);
+      unguard(); aiLog('Teste de voz OK');
       AI.state = 'ready'; aiStatus(); return true;
     }catch(e){
-      console.error(e); AI.state = 'error'; AI.err = (e && e.message) ? e.message.slice(0,120) : String(e); AI.loading = null; aiStatus(); return false;
+      console.error(e); unguard(); AI.state = 'error'; AI.err = (e && e.message) ? e.message.slice(0,140) : String(e); aiLog('ERRO: ' + AI.err); AI.loading = null; aiStatus(); return false;
     }
   })();
   return AI.loading;
@@ -1080,6 +1098,10 @@ function showAIVoices(){
     body.appendChild(el('div', 'sub', 'Idioma do livro'));
     chipRow(body, AI_LANGS, v => P.aiLang === v, v => { P.aiLang = v; reset(); showAIVoices(); }, off);
     body.appendChild(el('div', 'note', 'O botão "Estilo" também vale aqui: o ritmo e as pausas mudam conforme a emoção do texto.'));
+    const log = store.get('alv:aiLog', []);
+    if(log.length){ const d = document.createElement('details'); d.appendChild(el('summary', 'sub', 'Diagnóstico (mande print para o Claude)'));
+      const pre = el('div', 'note', navigator.userAgent + '\n' + log.join('\n')); pre.style.whiteSpace = 'pre-wrap'; pre.style.fontSize = '11px'; d.appendChild(pre); body.appendChild(d); }
+    if(AI.state === 'error'){ const b = el('button', 'chip', 'Tentar carregar de novo'); b.onclick = () => { AI.state = 'idle'; AI.err = ''; showAIVoices(); aiLoad(); }; const w = el('div', 'chips'); w.appendChild(b); body.appendChild(w); }
   });
 }
 function showVoices(tab){
@@ -1252,6 +1274,7 @@ window.addEventListener('pagehide', () => save(true));
 
 $('#voiceTipBody').innerHTML = voiceTipHTML();
 if(inClaude) $('#claudeWarn').classList.remove('hidden');
+if(aiCrashed) showErr('A voz de IA travou o aparelho na última vez, então voltei para a voz do aparelho. Em "Vozes" › Diagnóstico tem os detalhes para mandar ao Claude.');
 if(!synth) showErr('Este navegador não tem leitura em voz alta. Use Safari, Chrome ou Edge.');
 renderLibrary();
 })();
